@@ -18,11 +18,12 @@ printf 'Email registered on the AGORA website: '
 read -r email
 printf 'Password: '
 read -rs password
+
 encoded_email=$(urlencode "$email")
 
 login_url="https://agora.is.tue.mpg.de/login.php"
 download_page_url="https://agora.is.tue.mpg.de/download.php"
-download_url="https://psfiles.is.tuebingen.mpg.de/downloads/agora"
+download_url="https://download.is.tue.mpg.de/download.php?domain=agora&resume=1&sfile="
 cookie_path=$(mktemp)
 _term() {
   # Make sure to clean up the cookie file
@@ -30,36 +31,41 @@ _term() {
 }
 trap _term SIGTERM SIGINT
 
-curl "$login_url" --insecure --verbose --data "username=$encoded_email&password=$password" --cookie-jar "$cookie_path" --cookie "$cookie_path"
+curl "$login_url" --insecure --data "username=$encoded_email&password=$password" --cookie-jar "$cookie_path" --cookie "$cookie_path"
 
 get_file() {
-  curl --remote-name --remote-header-name --verbose -H "Referer: $download_page_url" --cookie-jar "$cookie_path" --cookie "$cookie_path" "$1"
+
+  curl --remote-name --remote-header-name --referer "$download_page_url" --cookie-jar "$cookie_path" --cookie "$cookie_path" "$1"
+
 }
 
 mkdircd "$DATA_ROOT/agora"
 
-for i in {0..9}; do
-  get_file "$download_url/train_images_3840x2160_${i}-zip"
+for i in {0..1}; do
+  # echo "$download_url/train_images_3840x2160_${i}-zip"
+
+  get_file "${download_url}train_images_3840x2160_${i}.zip"
+  
 done
 
-get_file "$download_url/validation_images_3840x2160-zip"
-get_file "$download_url/test_images_3840x2160-zip"
-get_file "$download_url/train_masks_3840x2160-zip"
-get_file "$download_url/validation_masks_3840x2160-zip"
+get_file "${download_url}validation_images_3840x2160.zip"
+get_file "${download_url}test_images_3840x2160.zip"
+get_file "${download_url}train_masks_3840x2160.zip"
+get_file "${download_url}validation_masks_3840x2160.zip"
 
-get_file "$download_url/smplx_gt-zip"
-get_file "$download_url/smpl_gt-zip"
-get_file "$download_url/gt_scan_info-zip"
-get_file "$download_url/smpl_kid_template-npy"
-get_file "$download_url/smplx_kid_template-npy"
-get_file "$download_url/train_Cam-zip"
-get_file "$download_url/train_SMPL-zip"
-get_file "$download_url/train_SMPLX-zip"
-get_file "$download_url/validation_Cam-zip"
-get_file "$download_url/validation_SMPL-zip"
-get_file "$download_url/validation_SMPLX-zip"
-get_file "$download_url/train_Cam_ReadMe-md"
-get_file "$download_url/validation_Cam_ReadMe-md"
+get_file "${download_url}smplx_gt.zip"
+get_file "${download_url}smpl_gt.zip"
+get_file "${download_url}gt_scan_info.zip"
+get_file "${download_url}smpl_kid_template.npy"
+get_file "${download_url}smplx_kid_template.npy"
+get_file "${download_url}train_Cam.zip"
+get_file "${download_url}train_SMPL.zip"
+get_file "${download_url}train_SMPLX.zip"
+get_file "${download_url}validation_Cam.zip"
+get_file "${download_url}validation_SMPL.zip"
+get_file "${download_url}validation_SMPLX.zip"
+get_file "${download_url}train_Cam_ReadMe.md"
+get_file "${download_url}validation_Cam_ReadMe.md"
 
 wget https://raw.githubusercontent.com/microsoft/AirSim/a7e467ebca707bba5b446836331075e90e3e3ab8/docs/seg_rgbs.txt
 
@@ -74,9 +80,9 @@ for subdir in SMPL SMPLX Cam; do
   rmdir "$DATA_ROOT/agora/validation_$subdir"
 done
 
-python -m posepile.ds.agora.extract_masks
+python3 -m posepile.ds.agora.extract_masks
 
-python -m humcentr_cli.detect_people --image-root="$DATA_ROOT/agora" --file-pattern='**/*.png' \
+python3 -m humcentr_cli.detect_people --image-root="$DATA_ROOT/agora" --file-pattern='**/*.png' \
   --out-path="$DATA_ROOT/agora/yolov4_detections.pkl" --image-type=png
 
-python -m posepile.ds.agora.main
+python3 -m posepile.ds.agora.main

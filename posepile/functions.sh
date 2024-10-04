@@ -50,4 +50,4 @@ mkdircd() {
   cd "$1" || exit 1
 }
 
-CODE_DIR=$(python -c "import posepile; print(posepile.__path__[0])")
+CODE_DIR=$(python3 -c "import posepile; print(posepile.__path__[0])")
